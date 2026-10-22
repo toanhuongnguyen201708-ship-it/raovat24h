@@ -1,0 +1,6 @@
+{
+  "name": "ChợRao & Shopee Affiliate Hub",
+  "description": "Nền tảng rao vặt C2C tích hợp cơ chế tiếp thị liên kết Shopee Affiliate độc quyền dành cho Quản trị viên, kiểm duyệt bài đăng nghiêm ngặt và tối ưu chuyển đổi hoa hồng.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
