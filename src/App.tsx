@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Product } from './types';
 import {
   getStoredUsers,
   getCurrentUser,
   setCurrentUser,
   getStoredProducts,
+  saveProducts,
+  saveUsers,
   createProductBySeller,
   updateProductBySeller,
   markProductAsSold,
@@ -19,6 +21,7 @@ import {
   unpinProduct,
   rejectPinRequest,
 } from './services/storage';
+import { fetchServerProducts, fetchServerUsers } from './services/api';
 import { Header } from './components/Header';
 import { Marketplace } from './components/Marketplace';
 import { ProductDetailModal } from './components/ProductDetailModal';
@@ -42,15 +45,29 @@ import { CheckCircle2, ShoppingBag } from 'lucide-react';
 
 export default function App() {
   const [users, setUsers] = useState<User[]>(getStoredUsers());
-  // Default to stored user or Admin user
+  // STRICT GUEST DEFAULT: When visiting the website, users always start as unauthenticated guest (khách hàng)
   const [currentUser, setUser] = useState<User | null>(() => {
-    const stored = getCurrentUser();
-    if (stored) return stored;
-    const all = getStoredUsers();
-    return all.find(u => u.role === 'admin') || all[0] || null;
+    return getCurrentUser(); // null for guest!
   });
   const [products, setProducts] = useState<Product[]>(getStoredProducts());
   const [activeTab, setActiveTab] = useState<'marketplace' | 'seller_dashboard' | 'admin_moderation' | 'admin_shopee_import' | 'admin_analytics' | 'admin_users'>('marketplace');
+
+  // Synchronize with persistent server database on mount
+  useEffect(() => {
+    async function initServerData() {
+      const serverProducts = await fetchServerProducts();
+      if (serverProducts) {
+        setProducts(serverProducts);
+        saveProducts(serverProducts);
+      }
+      const serverUsers = await fetchServerUsers();
+      if (serverUsers) {
+        setUsers(serverUsers);
+        saveUsers(serverUsers);
+      }
+    }
+    initServerData();
+  }, []);
   
   // Modals
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -94,12 +111,23 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const refreshData = () => {
+  const refreshData = async () => {
     setProducts(getStoredProducts());
     setUsers(getStoredUsers());
     const refreshedCurrent = getCurrentUser();
     if (refreshedCurrent) {
       setUser(refreshedCurrent);
+    }
+
+    const serverProducts = await fetchServerProducts();
+    if (serverProducts) {
+      setProducts(serverProducts);
+      saveProducts(serverProducts);
+    }
+    const serverUsers = await fetchServerUsers();
+    if (serverUsers) {
+      setUsers(serverUsers);
+      saveUsers(serverUsers);
     }
   };
 
@@ -261,10 +289,10 @@ export default function App() {
 
   const handleResetData = () => {
     resetDemoData();
+    setUser(null);
+    setActiveTab('marketplace');
     refreshData();
-    const updatedUsers = getStoredUsers();
-    setUser(updatedUsers.find(u => u.role === 'admin') || updatedUsers[0]);
-    showToast('Đã khôi phục dữ liệu mẫu! Tài khoản Admin: toanhuongnguyen201708@gmail.com / Toanhuong1');
+    showToast('Đã khôi phục dữ liệu mẫu hệ thống! Vui lòng đăng nhập lại với tài khoản Admin: toanhuongnguyen201708@gmail.com / Toanhuong1', 'info');
   };
 
   // Strict check: Only admin can view analytics

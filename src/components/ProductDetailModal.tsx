@@ -128,7 +128,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       selectedImageIndex === idx ? 'border-orange-600 ring-2 ring-orange-100' : 'border-slate-200 opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt={`Ảnh ${idx + 1}`} className="w-full h-full object-cover" />
+                    <img src={img} alt={`Ảnh ${idx + 1}`} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -210,25 +210,51 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 </div>
 
                 <div className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  {product.is_shopee_direct ? 'Tương tác & Mua hàng' : 'Khối 1: Giao dịch trực tiếp với người bán (C2C)'}
+                  {(product.is_shopee_direct || Boolean(product.shopee_affiliate_url)) ? 'Đặt mua trực tiếp Shopee Mall' : 'Khối 1: Giao dịch trực tiếp với người bán (C2C)'}
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  {/* Button 1: Web In-App Chat with automatic Zalo alert dispatch */}
-                  {onOpenInAppChat && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenInAppChat(product)}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold text-sm transition-colors shadow-sm group"
-                    >
-                      <MessageSquare className="w-4 h-4 text-yellow-300 group-hover:scale-110 transition-transform" />
-                      <span>Nhắn tin cho người bán trên Web</span>
-                      {!product.is_shopee_direct && (
+                  {/* For Shopee products: Replace in-app chat with 'Mua ngay' button that jumps to Shopee */}
+                  {(product.is_shopee_direct || Boolean(product.shopee_affiliate_url)) ? (
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (product.shopee_affiliate_url) {
+                            onAffiliateClick(product.id, product.shopee_affiliate_url);
+                          }
+                        }}
+                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#EE4D2D] hover:bg-[#d73f20] text-white rounded-xl font-bold text-base transition-all shadow-md hover:shadow-lg active:scale-[0.99] group cursor-pointer"
+                      >
+                        <ShoppingBag className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+                        <span>Mua ngay</span>
+                        <ExternalLink className="w-4 h-4 text-white/90 group-hover:translate-x-0.5 transition-transform" />
+                      </button>
+
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                        <span className="flex items-center gap-1">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                          Đảm bảo Shopee · Trả hàng 15 ngày
+                        </span>
+                        <span className="text-[10px] bg-orange-50 text-orange-700 font-semibold px-2 py-0.5 rounded border border-orange-200">
+                          Chuyển đến Shopee
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    onOpenInAppChat && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenInAppChat(product)}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold text-sm transition-colors shadow-sm group"
+                      >
+                        <MessageSquare className="w-4 h-4 text-yellow-300 group-hover:scale-110 transition-transform" />
+                        <span>Nhắn tin cho người bán trên Web</span>
                         <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-normal">
                           Báo về Zalo
                         </span>
-                      )}
-                    </button>
+                      </button>
+                    )
                   )}
 
                   {/* Button 2: Call Phone - Only for regular C2C sellers with valid non-admin phone */}
@@ -295,7 +321,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
 
               {/* KHỐI 2: TIẾP THỊ LIÊN KẾT CỦA QUẢN TRỊ VIÊN (SHOPEE AFFILIATE ENGINE) */}
-              {product.is_affiliate_active && product.shopee_affiliate_url && (
+              {!product.is_shopee_direct && product.is_affiliate_active && product.shopee_affiliate_url && (
                 <div className="p-4 rounded-xl border-2 border-orange-200 bg-gradient-to-b from-orange-50/70 via-orange-50/40 to-white relative overflow-hidden shadow-sm space-y-3">
                   {/* Subtle Shopee ribbon */}
                   <div className="flex items-center justify-between">
@@ -315,10 +341,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   {/* Main CTA Affiliate Button */}
                   <button
                     onClick={() => onAffiliateClick(product.id, product.shopee_affiliate_url)}
-                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-[#EE4D2D] to-[#F05D40] hover:from-[#d73f20] hover:to-[#db4f33] text-white rounded-xl font-bold text-sm transition-all shadow-md hover:shadow-lg transform active:scale-[0.99] group"
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-[#EE4D2D] to-[#F05D40] hover:from-[#d73f20] hover:to-[#db4f33] text-white rounded-xl font-bold text-sm transition-all shadow-md hover:shadow-lg transform active:scale-[0.99] group cursor-pointer"
                   >
                     <ShoppingBag className="w-4 h-4 text-white" />
-                    <span>{product.shopee_button_label || 'Xem giá ưu đãi trên Shopee'}</span>
+                    <span>{product.shopee_button_label || 'Mua ngay'}</span>
                     <ExternalLink className="w-4 h-4 ml-1 opacity-80 group-hover:translate-x-0.5 transition-transform" />
                   </button>
 

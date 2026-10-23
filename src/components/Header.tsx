@@ -18,8 +18,8 @@ import {
 
 interface HeaderProps {
   currentUser: User | null;
-  onSelectUser: (user: User) => void;
-  availableUsers: User[];
+  onSelectUser?: (user: User) => void;
+  availableUsers?: User[];
   activeTab: 'marketplace' | 'seller_dashboard' | 'admin_moderation' | 'admin_shopee_import' | 'admin_analytics' | 'admin_users';
   setActiveTab: (tab: 'marketplace' | 'seller_dashboard' | 'admin_moderation' | 'admin_shopee_import' | 'admin_analytics' | 'admin_users') => void;
   onOpenPostModal: () => void;
@@ -260,41 +260,6 @@ export const Header: React.FC<HeaderProps> = ({
                     <KeyRound className="w-4 h-4 text-orange-600" />
                     <span>Đổi mật khẩu tài khoản</span>
                   </button>
-
-                  <div className="my-1 border-t border-slate-100"></div>
-
-                  <div className="px-2 py-1 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                    CHUYỂN NHANH TÀI KHOẢN MẪU
-                  </div>
-
-                  {availableUsers.map((u) => (
-                    <button
-                      key={u.id}
-                      onClick={() => onSelectUser(u)}
-                      className={`w-full flex items-center justify-between p-2 rounded-lg text-left text-xs transition-colors ${
-                        u.id === currentUser.id
-                          ? 'bg-orange-50 text-orange-900 font-semibold'
-                          : 'hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={u.avatar}
-                          alt={u.name}
-                          className="w-6 h-6 rounded-full object-cover"
-                        />
-                        <div>
-                          <div className="truncate max-w-[130px] font-medium">{u.name}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">
-                            {u.role === 'admin' ? 'Tài khoản Quản trị' : `${u.phone} (Khách bán)`}
-                          </div>
-                        </div>
-                      </div>
-                      {u.id === currentUser.id && (
-                        <CheckCircle2 className="w-4 h-4 text-orange-600 shrink-0" />
-                      )}
-                    </button>
-                  ))}
 
                   <div className="my-1 border-t border-slate-100"></div>
 

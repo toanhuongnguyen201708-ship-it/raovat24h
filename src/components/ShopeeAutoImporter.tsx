@@ -66,7 +66,7 @@ export const ShopeeAutoImporter: React.FC<ShopeeAutoImporterProps> = ({
   // New Image URL input for editing gallery
   const [newImageUrl, setNewImageUrl] = useState('');
 
-  const handleExtract = (urlToExtract: string) => {
+  const handleExtract = async (urlToExtract: string) => {
     if (!urlToExtract.trim()) {
       setErrorMsg('Vui lòng dán đường link sản phẩm Shopee Affiliate vào ô bên dưới.');
       return;
@@ -76,17 +76,34 @@ export const ShopeeAutoImporter: React.FC<ShopeeAutoImporterProps> = ({
     setIsExtracting(true);
     setPublishedProduct(null);
 
-    setTimeout(() => {
-      try {
-        const result = extractShopeeProductFromUrl(urlToExtract.trim());
-        setExtractedData(result);
+    try {
+      // 1. Try server-side live OpenGraph metadata extractor first
+      const resp = await fetch('/api/extract-shopee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: urlToExtract.trim() }),
+      });
+      if (resp.ok) {
+        const liveData = await resp.json();
+        setExtractedData(liveData);
         setActiveTab('preview');
-      } catch (err) {
-        setErrorMsg('Không thể trích xuất link này. Vui lòng kiểm tra lại URL Shopee.');
-      } finally {
         setIsExtracting(false);
+        return;
       }
-    }, 400);
+    } catch (e) {
+      console.warn('Live API extraction fallback:', e);
+    }
+
+    // 2. Client-side verified catalog fallback
+    try {
+      const result = extractShopeeProductFromUrl(urlToExtract.trim());
+      setExtractedData(result);
+      setActiveTab('preview');
+    } catch (err) {
+      setErrorMsg('Không thể trích xuất link này. Vui lòng kiểm tra lại URL Shopee.');
+    } finally {
+      setIsExtracting(false);
+    }
   };
 
   const handlePublish = () => {

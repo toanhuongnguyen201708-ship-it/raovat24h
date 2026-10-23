@@ -1,4 +1,5 @@
 import { ProductCondition } from '../types';
+import { INITIAL_PRODUCTS } from '../data/mockData';
 
 export interface ExtractedShopeeProduct {
   title: string;
@@ -583,6 +584,33 @@ function matchProductProfile(fullText: string): ProductProfile | null {
  * (Hỗ trợ link đầy đủ shopee.vn/slug, shope.ee, s.shopee.vn, link affiliate)
  */
 export function extractShopeeProductFromUrl(url: string): ExtractedShopeeProduct {
+  const cleanInput = url.trim().toLowerCase();
+
+  // 1. Direct match with user's verified 38 product catalog
+  const foundInCatalog = INITIAL_PRODUCTS.find((p) => {
+    if (!p.shopee_affiliate_url) return false;
+    const cleanP = p.shopee_affiliate_url.trim().toLowerCase();
+    return cleanInput.includes(cleanP) || cleanP.includes(cleanInput);
+  });
+
+  if (foundInCatalog) {
+    return {
+      title: foundInCatalog.title,
+      description: foundInCatalog.description,
+      category: foundInCatalog.category,
+      price: foundInCatalog.price,
+      condition: foundInCatalog.condition,
+      location: foundInCatalog.location,
+      images: foundInCatalog.images,
+      seller_name: foundInCatalog.seller_name,
+      contact_phone: foundInCatalog.contact_phone || '',
+      shopee_affiliate_url: foundInCatalog.shopee_affiliate_url,
+      shopee_button_label: foundInCatalog.shopee_button_label || 'Mua Ngay trên Shopee Mall',
+      shopee_sub_url: foundInCatalog.shopee_sub_url,
+      shopee_sub_label: foundInCatalog.shopee_sub_label,
+    };
+  }
+
   const { slugText, cleanUrl, queryKeyword } = parseUrlTokens(url);
   const combinedSearchString = `${cleanUrl} ${slugText} ${queryKeyword}`.toLowerCase();
 
@@ -711,43 +739,43 @@ III. CHÍNH SÁCH BẢO HÀNH & BẢO VỆ NGƯỜI MUA 100%:
 
 export const SAMPLE_SHOPEE_LINKS = [
   {
-    name: 'iPhone 16 Pro Max VN/A',
-    url: 'https://shopee.vn/apple-iphone-16-pro-max-256gb-chinh-hang-vna-i.8837192.991827461?aff_trace_key=chorao_ip16',
-    category: 'Đồ điện tử & Công nghệ',
-  },
-  {
-    name: 'Samsung S24 Ultra AI',
-    url: 'https://shopee.vn/dien-thoai-samsung-galaxy-s24-ultra-5g-12gb-256gb-chinh-hang-i.88271.3329182?aff_trace_key=chorao_s24',
-    category: 'Đồ điện tử & Công nghệ',
-  },
-  {
-    name: 'MacBook Air M3 13 inch',
-    url: 'https://shopee.vn/laptop-apple-macbook-air-m3-8gb-256gb-chinh-hang-vna-i.8837192.4491827?aff_trace_key=chorao_macbook',
-    category: 'Đồ điện tử & Công nghệ',
-  },
-  {
-    name: 'Tai nghe Sony WH-1000XM5',
-    url: 'https://shopee.vn/tai-nghe-sony-wh-1000xm5-chong-on-chinh-hang-sony-vn-i.110293.44910283?aff_trace_key=chorao_sony_vip',
-    category: 'Đồ điện tử & Công nghệ',
-  },
-  {
-    name: 'Nồi chiên Philips 4.1L',
-    url: 'https://shopee.vn/noi-chien-khong-dau-philips-hd9252-4.1l-chinh-hang-i.55291.99281723?aff_trace_key=chorao_kitchen',
-    category: 'Đồ gia dụng & Bếp',
-  },
-  {
-    name: 'Robot Dreame D9 Max Gen 2',
-    url: 'https://shopee.vn/robot-hut-bui-lau-nha-dreame-d9-max-gen-2-6000pa-chinh-hang-i.19283.8827162?aff_trace_key=chorao_dreame',
-    category: 'Đồ gia dụng & Bếp',
-  },
-  {
-    name: 'Giày Nike Air Jordan 1 Retro',
-    url: 'https://shopee.vn/giay-nike-air-jordan-1-low-retro-fullbox-chinh-hang-i.332918.77162541?aff_trace_key=chorao_sneaker',
+    name: 'Quần áo bảo hộ lao động Toàn Hương',
+    url: 'https://s.shopee.vn/20wRtw56ZM',
     category: 'Thời trang & Giày dép',
   },
   {
-    name: 'Mũ Bảo Hiểm Royal M139',
-    url: 'https://shopee.vn/mu-bao-hiem-3-4-royal-m139-kinh-am-chinh-hang-i.44910.1182736?aff_trace_key=chorao_helmet',
-    category: 'Xe cộ & Phụ tùng',
+    name: 'Bộ kìm tuốt dây điện Deli Tools',
+    url: 'https://s.shopee.vn/8V9ve42B5Q',
+    category: 'Dụng cụ & Thiết bị',
+  },
+  {
+    name: 'Giấy vệ sinh treo tường TopGia 1280 tờ',
+    url: 'https://s.shopee.vn/2BFs6Lfv3T',
+    category: 'Đồ gia dụng & Bếp',
+  },
+  {
+    name: 'Đèn năng lượng mặt trời A Dong 120 LED',
+    url: 'https://s.shopee.vn/8fTLqJCZpC',
+    category: 'Đồ điện tử & Công nghệ',
+  },
+  {
+    name: 'Bình giữ nhiệt INOX 316 NENON 1200ml',
+    url: 'https://s.shopee.vn/8KqVRfbCbK',
+    category: 'Đồ gia dụng & Bếp',
+  },
+  {
+    name: 'Combo 3 Quần lót nam Coolmate Bamboo',
+    url: 'https://s.shopee.vn/60Saf8pauP',
+    category: 'Thời trang & Giày dép',
+  },
+  {
+    name: 'Tai nghe Bluetooth ROBOT Pin 25H',
+    url: 'https://s.shopee.vn/8V9vdnEc3x',
+    category: 'Đồ điện tử & Công nghệ',
+  },
+  {
+    name: 'Đèn pin siêu sáng XML P50 1800 Lumens',
+    url: 'https://s.shopee.vn/6q1hertoMM',
+    category: 'Đồ điện tử & Công nghệ',
   },
 ];

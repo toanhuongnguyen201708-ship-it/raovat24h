@@ -81,7 +81,7 @@ export const AdminModeration: React.FC<AdminModerationProps> = ({
   // Editable Admin Affiliate Fields for the currently selected product
   const [affiliateActive, setAffiliateActive] = useState(activeProduct?.is_affiliate_active ?? false);
   const [affiliateUrl, setAffiliateUrl] = useState(activeProduct?.shopee_affiliate_url ?? '');
-  const [buttonLabel, setButtonLabel] = useState(activeProduct?.shopee_button_label ?? 'Xem giá ưu đãi trên Shopee');
+  const [buttonLabel, setButtonLabel] = useState(activeProduct?.shopee_button_label ?? 'Mua ngay');
   const [subUrl, setSubUrl] = useState(activeProduct?.shopee_sub_url ?? '');
   const [subLabel, setSubLabel] = useState(activeProduct?.shopee_sub_label ?? 'Xem phụ kiện đi kèm trên Shopee');
   const [rejectionReason, setRejectionReason] = useState('');
@@ -94,7 +94,7 @@ export const AdminModeration: React.FC<AdminModerationProps> = ({
     if (activeProduct) {
       setAffiliateActive(activeProduct.is_affiliate_active ?? false);
       setAffiliateUrl(activeProduct.shopee_affiliate_url ?? '');
-      setButtonLabel(activeProduct.shopee_button_label || 'Xem giá ưu đãi trên Shopee');
+      setButtonLabel(activeProduct.shopee_button_label || 'Mua ngay');
       setSubUrl(activeProduct.shopee_sub_url ?? '');
       setSubLabel(activeProduct.shopee_sub_label ?? 'Xem phụ kiện đi kèm trên Shopee');
       setRejectionReason(activeProduct.rejection_reason ?? '');

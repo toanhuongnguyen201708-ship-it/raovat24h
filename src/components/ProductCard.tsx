@@ -18,8 +18,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   isAdmin = false,
   onDelete,
 }) => {
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [imgError, setImgError] = useState(false);
-  const primaryImage = product.images?.[0] || '';
+  const currentImage = product.images?.[activeImageIndex] || product.images?.[0] || '';
+
+  const handleImageError = () => {
+    if (product.images && activeImageIndex < product.images.length - 1) {
+      setActiveImageIndex((prev) => prev + 1);
+    } else {
+      setImgError(true);
+    }
+  };
 
   return (
     <article
@@ -32,11 +41,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     >
       {/* Product Image Container */}
       <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-        {!imgError && primaryImage ? (
+        {!imgError && currentImage ? (
           <img
-            src={primaryImage}
+            src={currentImage}
             alt={product.title}
-            onError={() => setImgError(true)}
+            onError={handleImageError}
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -112,13 +121,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </div>
           </div>
 
-          {product.is_shopee_direct ? (
-            <div className="flex items-center justify-between text-xs text-[#EE4D2D] font-bold group-hover:text-orange-700 pt-0.5">
-              <span className="flex items-center gap-1">
-                <span>Xem trên Shopee</span>
-                <ExternalLink className="w-3.5 h-3.5" />
+          {(product.is_shopee_direct || Boolean(product.shopee_affiliate_url)) ? (
+            <div 
+              onClick={(e) => {
+                e.stopPropagation();
+                if (product.shopee_affiliate_url) {
+                  window.open(product.shopee_affiliate_url, '_blank', 'noopener,noreferrer');
+                }
+              }}
+              className="flex items-center justify-between pt-1 cursor-pointer"
+            >
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-3 py-1 bg-[#EE4D2D] hover:bg-orange-700 text-white rounded-md text-xs font-bold transition-all shadow-xs active:scale-95 group/btn"
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>Mua ngay</span>
+                <ExternalLink className="w-3 h-3 opacity-90 group-hover/btn:translate-x-0.5 transition-transform" />
+              </button>
+              <span className="text-[10px] font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-200/60">
+                Shopee Mall
               </span>
-              <span className="text-[10px] font-normal text-slate-400">Chuyển hướng trực tiếp</span>
             </div>
           ) : (
             <div className="flex items-center justify-between text-xs text-slate-500">

@@ -1,7 +1,17 @@
 import { Product, User, ProductStatus, ProductCondition, Conversation, ChatMessage, AdminSupportMessage, ZaloNotification, PinPackage } from '../types';
 import { INITIAL_PRODUCTS, INITIAL_USERS } from '../data/mockData';
+import {
+  apiCreateProduct,
+  apiUpdateProduct,
+  apiDeleteProduct,
+  apiResetData,
+  apiToggleUserBan,
+  apiDeleteUser,
+  apiRegister,
+  apiChangePassword,
+} from './api';
 
-const PRODUCTS_KEY = 'chorao_products_v1';
+const PRODUCTS_KEY = 'chorao_products_v40_shopee_real_images';
 const USERS_KEY = 'chorao_users_v1';
 const CURRENT_USER_KEY = 'chorao_current_user_v1';
 const CONVERSATIONS_KEY = 'choviet24h_conversations_v1';
@@ -97,6 +107,7 @@ export function registerUser(data: {
   const updatedUsers = [...users, newUser];
   saveUsers(updatedUsers);
   setCurrentUser(newUser);
+  apiRegister(data).catch(err => console.error(err));
 
   return { success: true, user: newUser };
 }
@@ -157,6 +168,7 @@ export function changePassword(
   users[index].password = newPass;
   saveUsers(users);
   setCurrentUser(users[index]);
+  apiChangePassword(userId, currentPass, newPass).catch(err => console.error(err));
 
   return { success: true };
 }
@@ -169,32 +181,27 @@ export function getStoredProducts(): Product[] {
       return INITIAL_PRODUCTS;
     }
     const list: Product[] = JSON.parse(raw);
-    let changed = false;
-    const hasAdminShopee = list.some(p => p.id === 'prod_shopee_admin_1' || p.is_shopee_direct);
-    if (!hasAdminShopee && INITIAL_PRODUCTS[0]?.id === 'prod_shopee_admin_1') {
-      list.unshift(INITIAL_PRODUCTS[0]);
-      changed = true;
-    }
 
-    // Ensure sample customer pin requests are populated if not present
-    const hasAnyPinRequested = list.some(p => p.pin_requested);
-    if (!hasAnyPinRequested) {
-      list.forEach(p => {
-        const init = INITIAL_PRODUCTS.find(ip => ip.id === p.id);
-        if (init && init.pin_requested) {
-          p.pin_requested = init.pin_requested;
-          p.pin_requested_package = init.pin_requested_package;
-          p.pin_requested_at = init.pin_requested_at;
-          p.pin_request_status = init.pin_request_status;
-          p.pin_request_note = init.pin_request_note;
-          changed = true;
+    // Self-healing: if any product has no images or missing primary image, restore from INITIAL_PRODUCTS
+    let hasRepair = false;
+    const repaired = list.map((p) => {
+      if (!p.images || p.images.length === 0 || !p.images[0]) {
+        const fallback = INITIAL_PRODUCTS.find(
+          (ip) => ip.id === p.id || (p.shopee_affiliate_url && ip.shopee_affiliate_url === p.shopee_affiliate_url)
+        );
+        if (fallback && fallback.images && fallback.images.length > 0) {
+          hasRepair = true;
+          return { ...p, images: fallback.images, title: fallback.title || p.title, price: fallback.price || p.price };
         }
-      });
+      }
+      return p;
+    });
+
+    if (hasRepair) {
+      localStorage.setItem(PRODUCTS_KEY, JSON.stringify(repaired));
+      return repaired;
     }
 
-    if (changed) {
-      localStorage.setItem(PRODUCTS_KEY, JSON.stringify(list));
-    }
     return list;
   } catch {
     return INITIAL_PRODUCTS;
@@ -227,7 +234,7 @@ export function createProductBySeller(
     seller_avatar: currentUser.avatar,
     status: 'pending',
     shopee_affiliate_url: '',
-    shopee_button_label: 'Xem giá ưu đãi trên Shopee',
+    shopee_button_label: 'Mua ngay',
     is_affiliate_active: false,
     views_count: 0,
     affiliate_clicks_count: 0,
@@ -237,6 +244,7 @@ export function createProductBySeller(
 
   const updatedList = [newProduct, ...products];
   saveProducts(updatedList);
+  apiCreateProduct(newProduct).catch(err => console.error(err));
   return newProduct;
 }
 
@@ -290,6 +298,7 @@ export function createProductFromShopeeLink(
 
   const updatedList = [newProduct, ...products];
   saveProducts(updatedList);
+  apiCreateProduct(newProduct).catch(err => console.error(err));
   return newProduct;
 }
 
@@ -312,6 +321,7 @@ export function updateProductBySeller(
 
   products[index] = updated;
   saveProducts(products);
+  apiUpdateProduct(id, updated).catch(err => console.error(err));
   return updated;
 }
 
@@ -323,6 +333,7 @@ export function markProductAsSold(id: string): Product | null {
   products[index].status = 'sold';
   products[index].updated_at = new Date().toISOString();
   saveProducts(products);
+  apiUpdateProduct(id, { status: 'sold' }).catch(err => console.error(err));
   return products[index];
 }
 
@@ -330,6 +341,7 @@ export function deleteProduct(id: string): boolean {
   const products = getStoredProducts();
   const filtered = products.filter(p => p.id !== id);
   saveProducts(filtered);
+  apiDeleteProduct(id).catch(err => console.error(err));
   return true;
 }
 
@@ -364,6 +376,7 @@ export function moderateProductByAdmin(
 
   products[index] = updated;
   saveProducts(products);
+  apiUpdateProduct(id, updated).catch(err => console.error(err));
   return updated;
 }
 
@@ -394,6 +407,7 @@ export function toggleUserStatus(userId: string): User | null {
   if (target.role === 'admin' || target.id === 'admin') return null;
   target.status = target.status === 'active' ? 'banned' : 'active';
   saveUsers(users);
+  apiToggleUserBan(userId).catch(err => console.error(err));
   return target;
 }
 
@@ -408,16 +422,18 @@ export function deleteUser(userId: string): { success: boolean; error?: string }
   }
   const nextUsers = users.filter(u => u.id !== userId);
   saveUsers(nextUsers);
+  apiDeleteUser(userId).catch(err => console.error(err));
   return { success: true };
 }
 
 export function resetDemoData(): void {
   localStorage.setItem(PRODUCTS_KEY, JSON.stringify(INITIAL_PRODUCTS));
   localStorage.setItem(USERS_KEY, JSON.stringify(INITIAL_USERS));
-  localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(INITIAL_USERS[0]));
+  localStorage.removeItem(CURRENT_USER_KEY); // STRICT GUEST: do NOT set as Admin!
   localStorage.removeItem(CONVERSATIONS_KEY);
   localStorage.removeItem(ZALO_NOTIFICATIONS_KEY);
   localStorage.removeItem(ADMIN_SUPPORT_MESSAGES_KEY);
+  apiResetData().catch(err => console.error(err));
 }
 
 // ==========================================
@@ -448,6 +464,7 @@ export function pinProduct(id: string, packageType: PinPackage): Product | null 
 
   products[index] = updated;
   saveProducts(products);
+  apiUpdateProduct(id, updated).catch(err => console.error(err));
   return updated;
 }
 
@@ -472,6 +489,7 @@ export function requestPinProduct(
 
   products[index] = updated;
   saveProducts(products);
+  apiUpdateProduct(id, updated).catch(err => console.error(err));
   return updated;
 }
 
@@ -489,6 +507,7 @@ export function rejectPinRequest(id: string): Product | null {
 
   products[index] = updated;
   saveProducts(products);
+  apiUpdateProduct(id, updated).catch(err => console.error(err));
   return updated;
 }
 
@@ -508,6 +527,7 @@ export function unpinProduct(id: string): Product | null {
 
   products[index] = updated;
   saveProducts(products);
+  apiUpdateProduct(id, updated).catch(err => console.error(err));
   return updated;
 }
 
